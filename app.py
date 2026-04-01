@@ -8,7 +8,7 @@ app = Flask(__name__)
 def home():
     return jsonify({
         "status": "running",
-        "message": "Rakib Video API 🚀 (All Format Auto)"
+        "message": "Rakib Video API 🚀 (Ultimate Fix)"
     })
 
 @app.route("/download")
@@ -22,13 +22,11 @@ def download():
         'quiet': True,
         'no_warnings': True,
 
-        # 🔥 ALL FORMAT AUTO SELECT
-        'format': 'best/bestvideo+bestaudio/bestvideo/bestaudio',
+        # ❌ NO FORMAT (important)
+        # let yt-dlp fetch all formats
 
-        # 🍪 cookies (YouTube fix)
         'cookiefile': 'cookies.txt',
 
-        # 🌐 anti-block headers
         'http_headers': {
             'User-Agent': 'Mozilla/5.0'
         }
@@ -38,14 +36,27 @@ def download():
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
 
-            # 🔗 fallback handling
-            video_url = info.get("url")
+            video_url = None
 
-            # some formats use formats list
-            if not video_url and "formats" in info:
+            # ✅ try direct url first
+            if info.get("url"):
+                video_url = info.get("url")
+
+            # ✅ fallback: pick best format manually
+            elif "formats" in info:
                 formats = info.get("formats")
-                if formats:
-                    video_url = formats[-1].get("url")  # last = best fallback
+
+                # sort by quality (height)
+                formats = sorted(
+                    formats,
+                    key=lambda x: x.get("height", 0),
+                    reverse=True
+                )
+
+                for f in formats:
+                    if f.get("url"):
+                        video_url = f.get("url")
+                        break
 
             return jsonify({
                 "title": info.get("title"),
