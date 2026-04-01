@@ -8,7 +8,7 @@ app = Flask(__name__)
 def home():
     return jsonify({
         "status": "running",
-        "message": "Rakib Video API 🚀"
+        "message": "Rakib Video API 🚀 (All Format Auto)"
     })
 
 @app.route("/download")
@@ -21,8 +21,14 @@ def download():
     ydl_opts = {
         'quiet': True,
         'no_warnings': True,
-        'format': 'best',
-        'cookiefile': 'cookies.txt',  # 👈 IMPORTANT
+
+        # 🔥 ALL FORMAT AUTO SELECT
+        'format': 'best/bestvideo+bestaudio/bestvideo/bestaudio',
+
+        # 🍪 cookies (YouTube fix)
+        'cookiefile': 'cookies.txt',
+
+        # 🌐 anti-block headers
         'http_headers': {
             'User-Agent': 'Mozilla/5.0'
         }
@@ -32,14 +38,27 @@ def download():
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
 
+            # 🔗 fallback handling
+            video_url = info.get("url")
+
+            # some formats use formats list
+            if not video_url and "formats" in info:
+                formats = info.get("formats")
+                if formats:
+                    video_url = formats[-1].get("url")  # last = best fallback
+
             return jsonify({
                 "title": info.get("title"),
-                "download_link": info.get("url"),
-                "thumbnail": info.get("thumbnail")
+                "download_link": video_url,
+                "thumbnail": info.get("thumbnail"),
+                "duration": info.get("duration"),
+                "uploader": info.get("uploader")
             })
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({
+            "error": str(e)
+        }), 500
 
 
 if __name__ == "__main__":
